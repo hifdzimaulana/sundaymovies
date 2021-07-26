@@ -1,44 +1,3 @@
-// $('.search-button').on('click', function() {
-
-//     $.ajax({
-//         url : `http://www.omdbapi.com/?apikey=c8252c4f&s=${$('.input-keyword').val()}`,
-    
-//         success : results => {
-//             const movies = results.Search;
-//             if (movies != undefined) {
-//                 let cards = '';
-//                 movies.forEach(element => {
-//                     cards += getCard(element);
-//                 })
-//                 $('.movies-container').html(cards)
-        
-//                 // detail button click
-//                 $('.modal-detail-button').on('click', function () {
-//                     $.ajax({
-//                         url : `http://www.omdbapi.com/?apikey=c8252c4f&i=${$(this).data('imdbid')}`,
-//                         success : element => {
-//                             const movie_details = getMovieDetails(element)
-//                             $('.modal-body').html(movie_details);
-//                         },
-//                         error : message => {
-//                             console.log(message);
-//                         }
-//                     })
-//                 })
-//             } else {
-//                 const jumbotron = errorJumbotron(`"${$('.input-keyword').val()}" is not found.`)
-//                 $('.error-page').html(jumbotron)
-//             }
-//         },
-    
-//         error : e => {
-//             const jumbotron = errorJumbotron(e)
-//             $('.error-page').html(jumbotron)
-//         }
-//     });
-
-// })
-
 
 // fetch with vanilla javascript
 const searchbutton = document.querySelector('.search-button')
@@ -47,13 +6,20 @@ searchbutton.addEventListener('click', function() {
     const query = document.querySelector('.input-keyword').value;
     fetch(`http://www.omdbapi.com/?apikey=c8252c4f&s=${query}`)
 
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                document.querySelector('.error-page').innerHTML = errorJumbotron(response.status, response.statusText);
+                throw new Error(response.statusText)
+            } else {
+                return response.json()
+            }
+        })
         .then(function(results) {
-            const movies = results.Search;
             let cards = ''
 
             // if movies is exist
-            if (movies != undefined){
+            if (results.Response != "False"){
+                const movies = results.Search;
                 document.querySelector('.error-page').innerHTML = '';
                 movies.forEach(element => cards += getCard(element));
                 document.querySelector('.movies-container').innerHTML = cards;
@@ -73,8 +39,9 @@ searchbutton.addEventListener('click', function() {
             }
 
             else {
-                const jumbotron = errorJumbotron(`"${query}" is not found.`);
+                const jumbotron = errorJumbotron('Error!', `"${query}" is not found.`);
                 document.querySelector('.error-page').innerHTML = jumbotron;
+                throw new Error(results.Error)
             }
         });
 
@@ -120,11 +87,11 @@ function getMovieDetails(element) {
             </div>`;
 }
 
-function errorJumbotron(message) {
+function errorJumbotron(header, message) {
     document.querySelector('.movies-container').innerHTML = '';
     return `<div class="jumbotron jumbotron-fluid">
                 <div class="container">
-                    <h1 class="display-4">Error!</h1>
+                    <h1 class="display-4">${header}</h1>
                     <p class="lead">${message}</p>
                 </div>
             </div>`;
